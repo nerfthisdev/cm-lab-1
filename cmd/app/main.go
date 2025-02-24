@@ -9,13 +9,11 @@ import (
 func main() {
 
 	A := [][]float64{
-		{3.0, 2.0, 10.0, 1.0},
-		{1.0, 2.0, 1.0, 12.0},
-		{15.0, 1.0, 2.0, 3.0},
-		{1.0, 20.0, 1.0, 2.0},
+		{4, 1},
+		{1, 3},
 	}
 
-	b := []float64{16.0, 16.0, 21.0, 24.0}
+	b := []float64{3, 2}
 
 	var success bool
 	var flag bool
@@ -36,18 +34,19 @@ func main() {
 
 	}
 
-	// Вычисление B = D^{-1} * (D - A) = I - D^{-1}A
-
 	D, L_plus_U := linearal.TransformMatrix(A)
-	B, c := linearal.CalcB(D, L_plus_U, b)
-	norm := linearal.MatrixInfNorm(B)
+
+	fmt.Println(L_plus_U)
+
+	C, d := linearal.CalcC(D, L_plus_U, b)
+	norm := linearal.MatrixInfNorm(C)
 	fmt.Printf("∞-норма матрицы B: %.4f\n", norm)
 
 	x0 := make([]float64, len(A))
 
 	tol := 1e-6
 
-	solution, iterations, errors := linearal.SimpleIteration(B, c, x0, tol, 1000)
+	solution, iterations, errors := linearal.SimpleIteration(C, d, x0, tol, 1000)
 
 	fmt.Println("Решение:", solution)
 	fmt.Println("Количество итераций:", iterations)
