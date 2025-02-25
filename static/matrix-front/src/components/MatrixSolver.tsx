@@ -6,17 +6,15 @@ import "react-toastify/dist/ReactToastify.css";
 export const MatrixSolver = () => {
     const MAX_N_VALUE = 20;
 
-    // States
-    const [n, setN] = useState<number | null>(null); // Matrix size
+    const [n, setN] = useState<number | null>(null);
     const [matrix, setMatrix] = useState<string[][]>(
         Array.from({ length: 2 }, () => Array(2).fill(""))
     );
     const [vector, setVector] = useState<string[]>(Array(2).fill(""));
-    const [epsilon, setEpsilon] = useState<string>(""); // Epsilon input
-    const [loading, setLoading] = useState<boolean>(false); // Loading state
-    const [serverResponse, setServerResponse] = useState<string>(""); // Server response
+    const [epsilon, setEpsilon] = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(false);
+    const [serverResponseText, setServerResponseText] = useState<string>("");
 
-    // Handle matrix size change
     const handleNChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const inputValue = e.target.value.trim();
         let newN: number | null = null;
@@ -33,7 +31,7 @@ export const MatrixSolver = () => {
                 newN = parsedValue;
             } else {
                 toast.error(
-                    `Please enter a value between 1 and ${MAX_N_VALUE}.`,
+                    `Пожалуйста, введите значение от 1 до ${MAX_N_VALUE}.`,
                     {
                         position: "top-center",
                         autoClose: 3000,
@@ -51,37 +49,33 @@ export const MatrixSolver = () => {
         }
     };
 
-    // Update matrix values
     const updateMatrix = (row: number, col: number, value: string) => {
         const newMatrix = matrix.map((row) => [...row]);
         newMatrix[row][col] = value;
         setMatrix(newMatrix);
     };
 
-    // Update vector values
     const updateVector = (index: number, value: string) => {
         const newVector = [...vector];
         newVector[index] = value;
         setVector(newVector);
     };
 
-    // Handle epsilon change
     const handleEpsilonChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const inputValue = e.target.value.trim();
         if (/^\d*\.?\d+$/.test(inputValue) || inputValue === "") {
             setEpsilon(inputValue);
         } else {
-            toast.error("Please enter a valid number for epsilon.", {
+            toast.error("Пожалуйста, введите корректное число для точности.", {
                 position: "top-center",
                 autoClose: 3000,
             });
         }
     };
 
-    // Send data to the server
     const handleSubmit = async () => {
         if (!n || n <= 0) {
-            toast.error("Please specify a valid matrix size.", {
+            toast.error("Пожалуйста, укажите корректный размер матрицы.", {
                 position: "top-center",
                 autoClose: 3000,
             });
@@ -89,14 +83,13 @@ export const MatrixSolver = () => {
         }
 
         if (!epsilon) {
-            toast.error("Please specify a valid epsilon value.", {
+            toast.error("Пожалуйста, укажите корректное значение точности.", {
                 position: "top-center",
                 autoClose: 3000,
             });
             return;
         }
 
-        // Validate matrix and vector inputs
         const isValidMatrix = matrix.every((row) =>
             row.every((cell) => cell.trim() !== "")
         );
@@ -104,7 +97,7 @@ export const MatrixSolver = () => {
 
         if (!isValidMatrix || !isValidVector) {
             toast.error(
-                "Please fill all matrix and vector fields with valid numbers.",
+                "Пожалуйста, заполните все поля матрицы и вектора корректными числами.",
                 {
                     position: "top-center",
                     autoClose: 3000,
@@ -115,29 +108,42 @@ export const MatrixSolver = () => {
 
         try {
             setLoading(true);
+            const startTime = Date.now();
 
-            // Prepare data to send
             const requestData = {
-                matrix: matrix.map((row) => row.map(Number)), // Convert strings to numbers
-                vector: vector.map(Number), // Convert strings to numbers
+                matrix: matrix.map((row) => row.map(Number)),
+                vector: vector.map(Number),
                 epsilon: parseFloat(epsilon),
             };
 
-            // Send POST request to the Go server
             const response = await axios.post(
-                "http://localhost:8080/solve",
+                "http://localhost:5176/solve",
                 requestData
             );
 
-            // Handle server response
-            setServerResponse(JSON.stringify(response.data, null, 2));
-            toast.success("Request successful!", {
+            const endTime = Date.now();
+            const elapsedTime = endTime - startTime;
+
+            const data = response.data;
+            const formattedResponse = `
+Было ли до этого диагональное преобладание: ${data.alreadyHas ? "Да" : "Нет"}
+Строго ли выполняется условие: ${data.flag ? "Да" : "Нет"}
+Удалось ли достичь диагонального преобладания: ${data.success ? "Да" : "Нет"}
+Норма матрицы C: ${data.norm.toFixed(4)}
+Вектор решений: [${data.solution.join(", ")}]
+Количество итераций: ${data.iterations}
+Вектор ошибок: [${data.errors.slice(0, 10).join(", ")}...]
+Время работы: ${elapsedTime} мс
+`;
+
+            setServerResponseText(formattedResponse);
+            toast.success("Запрос выполнен успешно!", {
                 position: "top-center",
                 autoClose: 3000,
             });
         } catch (error) {
             console.error(error);
-            toast.error("An error occurred while processing the request.", {
+            toast.error("Произошла ошибка при обработке запроса.", {
                 position: "top-center",
                 autoClose: 3000,
             });
@@ -147,80 +153,127 @@ export const MatrixSolver = () => {
     };
 
     return (
-        <div style={{ padding: "20px", fontFamily: "Arial" }}>
-            {/* Matrix Size Input */}
-            <div style={{ marginBottom: "20px" }}>
-                <label>
-                    Matrix size (n):
-                    <input
-                        type="number"
-                        min="1"
-                        value={n ?? ""}
-                        onChange={handleNChange}
-                        style={{ marginLeft: "10px", padding: "5px" }}
-                    />
-                </label>
-            </div>
+        <>
+            <div style={{ padding: "20px", fontFamily: "Arial" }}>
+                <div style={{ marginBottom: "20px" }}>
+                    <label>
+                        Размер матрицы (n):
+                        <input
+                            type="number"
+                            min="1"
+                            value={n ?? ""}
+                            onChange={handleNChange}
+                            style={{ marginLeft: "10px", padding: "5px" }}
+                        />
+                    </label>
+                </div>
 
-            {/* Epsilon Input */}
-            <div style={{ marginBottom: "20px" }}>
-                <label>
-                    Epsilon (tolerance):
-                    <input
-                        type="number"
-                        step="any"
-                        value={epsilon}
-                        onChange={handleEpsilonChange}
-                        style={{ marginLeft: "10px", padding: "5px" }}
-                    />
-                </label>
-            </div>
+                <div style={{ marginBottom: "20px" }}>
+                    <label>
+                        Точность (epsilon):
+                        <input
+                            type="number"
+                            step="any"
+                            value={epsilon}
+                            onChange={handleEpsilonChange}
+                            style={{ marginLeft: "10px", padding: "5px" }}
+                        />
+                    </label>
+                </div>
 
-            {/* Matrix and Vector Inputs */}
-            {n !== null && n > 0 && (
                 <div
                     style={{
                         display: "flex",
-                        gap: "30px",
-                        alignItems: "flex-start",
+                        justifyContent: "center",
+                        alignItems: "center",
                     }}
                 >
-                    {/* Matrix Input */}
-                    <div style={{ position: "relative" }}>
-                        <div
-                            style={{
-                                position: "absolute",
-                                left: "-15px",
-                                top: "0",
-                                height: "100%",
-                                borderLeft: "2px solid #666",
-                                borderRight: "2px solid #666",
-                                width: "10px",
-                            }}
-                        />
+                    {n !== null && n > 0 && (
                         <div
                             style={{
                                 display: "flex",
-                                flexDirection: "column",
-                                gap: "5px",
+                                flexDirection: "row",
+                                alignItems: "center",
+                                gap: "30px",
                             }}
                         >
-                            {matrix.map((row, i) => (
+                            <div style={{ position: "relative" }}>
                                 <div
-                                    key={i}
-                                    style={{ display: "flex", gap: "5px" }}
+                                    style={{
+                                        position: "absolute",
+                                        left: "-15px",
+                                        top: "0",
+                                        height: "100%",
+                                        borderLeft: "2px solid #666",
+                                        borderRight: "2px solid #666",
+                                        width: "10px",
+                                    }}
+                                />
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: "5px",
+                                    }}
                                 >
-                                    {row.map((cell, j) => (
+                                    {matrix.map((row, i) => (
+                                        <div
+                                            key={i}
+                                            style={{
+                                                display: "flex",
+                                                gap: "5px",
+                                            }}
+                                        >
+                                            {row.map((cell, j) => (
+                                                <input
+                                                    key={`${i}-${j}`}
+                                                    type="number"
+                                                    value={cell}
+                                                    onChange={(e) =>
+                                                        updateMatrix(
+                                                            i,
+                                                            j,
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    style={{
+                                                        width: "50px",
+                                                        padding: "5px",
+                                                        textAlign: "center",
+                                                        border: "1px solid #ccc",
+                                                        borderRadius: "4px",
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div style={{ position: "relative" }}>
+                                <div
+                                    style={{
+                                        position: "absolute",
+                                        left: "-15px",
+                                        top: "0",
+                                        height: "100%",
+                                        borderLeft: "2px solid #666",
+                                        width: "10px",
+                                    }}
+                                />
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: "5px",
+                                    }}
+                                >
+                                    {vector.map((value, i) => (
                                         <input
-                                            key={`${i}-${j}`}
+                                            key={i}
                                             type="number"
-                                            value={cell}
+                                            value={value}
                                             onChange={(e) =>
-                                                updateMatrix(
-                                                    i,
-                                                    j,
-                                                    e.target.value
-                                                )
+                                                updateVector(i, e.target.value)
                                             }
                                             style={{
                                                 width: "50px",
@@ -232,83 +285,48 @@ export const MatrixSolver = () => {
                                         />
                                     ))}
                                 </div>
-                            ))}
+                            </div>
                         </div>
-                    </div>
-
-                    {/* Vector Input */}
-                    <div style={{ position: "relative" }}>
-                        <div
-                            style={{
-                                position: "absolute",
-                                left: "-15px",
-                                top: "0",
-                                height: "100%",
-                                borderLeft: "2px solid #666",
-                                width: "10px",
-                            }}
-                        />
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "5px",
-                            }}
-                        >
-                            {vector.map((value, i) => (
-                                <input
-                                    key={i}
-                                    type="number"
-                                    value={value}
-                                    onChange={(e) =>
-                                        updateVector(i, e.target.value)
-                                    }
-                                    style={{
-                                        width: "50px",
-                                        padding: "5px",
-                                        textAlign: "center",
-                                        border: "1px solid #ccc",
-                                        borderRadius: "4px",
-                                    }}
-                                />
-                            ))}
-                        </div>
-                    </div>
+                    )}
                 </div>
-            )}
 
-            <button
-                onClick={handleSubmit}
-                disabled={loading}
-                style={{
-                    padding: "10px 20px",
-                    backgroundColor: "#007bff",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    opacity: loading ? 0.5 : 1,
-                    pointerEvents: loading ? "none" : "auto",
-                }}
-            >
-                {loading ? "Loading..." : "Solve"}
-            </button>
-
-            {serverResponse && (
+                <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    style={{
+                        padding: "10px 20px",
+                        backgroundColor: "#007bff",
+                        marginTop: "15px",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        opacity: loading ? 0.5 : 1,
+                        pointerEvents: loading ? "none" : "auto",
+                    }}
+                >
+                    {loading ? "Загрузка..." : "Решить"}
+                </button>
+            </div>
+            {serverResponseText && (
                 <pre
                     style={{
                         marginTop: "20px",
                         padding: "10px",
-                        border: "1px solid #ccc",
+                        backgroundColor: "#000",
+                        color: "#fff",
+                        border: "1px solid #444",
                         borderRadius: "4px",
-                        backgroundColor: "#f9f9f9",
                         whiteSpace: "pre-wrap",
                         overflowX: "auto",
+                        overflowY: "auto",
+
+                        wordBreak: "break-word",
                     }}
                 >
-                    {serverResponse}
+                    {serverResponseText}
                 </pre>
             )}
-        </div>
+        </>
     );
 };
