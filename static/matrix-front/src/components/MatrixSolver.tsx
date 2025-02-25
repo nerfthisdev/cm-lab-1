@@ -226,10 +226,7 @@ export const MatrixSolver = () => {
                 epsilon: parseFloat(epsilon),
             };
 
-            const response = await axios.post(
-                "http://localhost:5176/solve",
-                requestData
-            );
+            const response = await axios.post("/solve", requestData);
 
             const endTime = Date.now();
             const elapsedTime = endTime - startTime;
