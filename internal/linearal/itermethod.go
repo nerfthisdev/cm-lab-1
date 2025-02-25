@@ -86,7 +86,7 @@ func MatrixInfNorm(mat [][]float64) float64 {
 	return maxSum
 }
 
-// diag - диагональ матрицы, L_plus_U элементы матрицы
+// diag - диагональ матрицы, L_plus_U элементы матрицы кроме диагонали
 func TransformMatrix(mat [][]float64) ([][]float64, [][]float64) {
 
 	n := len(mat)
@@ -106,22 +106,20 @@ func TransformMatrix(mat [][]float64) ([][]float64, [][]float64) {
 	return diag, L_plus_U
 }
 
-// Вычисление B = D^{-1} * (D - A) = I - D^{-1}A
-
 // C - Матрица преобразования, D - Вектор правых частей
 func CalcC(C [][]float64, L_plus_U [][]float64, b []float64) ([][]float64, []float64) {
 	n := len(b)
-	B := make([][]float64, n)
+	С := make([][]float64, n)
 	D := make([]float64, n)
 	for i := 0; i < n; i++ {
-		B[i] = make([]float64, n)
+		С[i] = make([]float64, n)
 		invD := 1.0 / C[i][i]
 		D[i] = invD * b[i]
 		for j := 0; j < n; j++ {
-			B[i][j] = -invD * L_plus_U[i][j]
+			С[i][j] = -invD * L_plus_U[i][j]
 		}
 	}
-	return B, D
+	return С, D
 }
 
 func SimpleIteration(B [][]float64, c []float64, x0 []float64, tol float64, maxIter int) ([]float64, int, []float64) {

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/nerfthisdev/cm-lab-1/internal/linearal"
 )
 
@@ -89,10 +88,6 @@ func handleReq(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
 	staticPath := os.Getenv("STATIC_PATH")
 
 	fs := http.FileServer(http.Dir(staticPath))
