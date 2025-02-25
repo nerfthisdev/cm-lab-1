@@ -15,6 +15,116 @@ export const MatrixSolver = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [serverResponseText, setServerResponseText] = useState<string>("");
 
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const content = event.target?.result as string;
+            const lines = content
+                .split(/\r?\n/)
+                .filter((line) => line.trim() !== "");
+
+            if (lines.length < 1) {
+                toast.error("Файл должен содержать матрицу и вектор", {
+                    position: "top-center",
+                    autoClose: 3000,
+                });
+                return;
+            }
+
+            const matrixLines = lines.slice(0, -1);
+            const vectorLine = lines[lines.length - 1];
+
+            const newN = matrixLines.length;
+            if (newN < 1 || newN > MAX_N_VALUE) {
+                toast.error(
+                    `Размер матрицы должен быть от 1 до ${MAX_N_VALUE}`,
+                    {
+                        position: "top-center",
+                        autoClose: 3000,
+                    }
+                );
+                return;
+            }
+
+            const matrixData: string[][] = [];
+            for (const line of matrixLines) {
+                const numbers = line
+                    .trim()
+                    .split(/\s+/)
+                    .map((num) => num.replace(",", "."));
+                if (numbers.length !== newN) {
+                    toast.error(
+                        `Строка матрицы должна содержать ${newN} чисел`,
+                        {
+                            position: "top-center",
+                            autoClose: 3000,
+                        }
+                    );
+                    return;
+                }
+                if (
+                    !numbers.every((num) =>
+                        /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(num)
+                    )
+                ) {
+                    toast.error(
+                        "Все элементы матрицы должны быть корректными числами",
+                        {
+                            position: "top-center",
+                            autoClose: 3000,
+                        }
+                    );
+                    return;
+                }
+                matrixData.push(numbers);
+            }
+
+            const vectorNumbers = vectorLine
+                .trim()
+                .split(/\s+/)
+                .map((num) => num.replace(",", "."));
+            if (vectorNumbers.length !== newN) {
+                toast.error(`Вектор должен содержать ${newN} чисел`, {
+                    position: "top-center",
+                    autoClose: 3000,
+                });
+                return;
+            }
+            if (
+                !vectorNumbers.every((num) =>
+                    /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(num)
+                )
+            ) {
+                toast.error(
+                    "Все элементы вектора должны быть корректными числами",
+                    {
+                        position: "top-center",
+                        autoClose: 3000,
+                    }
+                );
+                return;
+            }
+
+            setN(newN);
+            setMatrix(matrixData);
+            setVector(vectorNumbers);
+            toast.success("Файл успешно загружен", {
+                position: "top-center",
+                autoClose: 3000,
+            });
+        };
+        reader.onerror = () => {
+            toast.error("Ошибка при чтении файла", {
+                position: "top-center",
+                autoClose: 3000,
+            });
+        };
+        reader.readAsText(file);
+    };
+
     const handleNChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const inputValue = e.target.value.trim();
         let newN: number | null = null;
@@ -125,7 +235,13 @@ export const MatrixSolver = () => {
             const elapsedTime = endTime - startTime;
 
             const data = response.data;
-            const formattedResponse = `
+            let formattedResponse: string;
+
+            if (data.error) {
+                formattedResponse =
+                    "Не удалось достичь диагонального преобладания и норма больше 1";
+            } else {
+                formattedResponse = `
 Было ли до этого диагональное преобладание: ${data.alreadyHas ? "Да" : "Нет"}
 Строго ли выполняется условие: ${data.flag ? "Да" : "Нет"}
 Удалось ли достичь диагонального преобладания: ${data.success ? "Да" : "Нет"}
@@ -135,6 +251,7 @@ export const MatrixSolver = () => {
 Вектор ошибок: [${data.errors.slice(0, 10).join(", ")}...]
 Время работы: ${elapsedTime} мс
 `;
+            }
 
             setServerResponseText(formattedResponse);
             toast.success("Запрос выполнен успешно!", {
@@ -155,6 +272,17 @@ export const MatrixSolver = () => {
     return (
         <>
             <div style={{ padding: "20px", fontFamily: "Arial" }}>
+                <div style={{ marginBottom: "20px" }}>
+                    <label>
+                        Загрузить из файла:
+                        <input
+                            type="file"
+                            accept=".txt"
+                            onChange={handleFileUpload}
+                            style={{ marginLeft: "10px", padding: "5px" }}
+                        />
+                    </label>
+                </div>
                 <div style={{ marginBottom: "20px" }}>
                     <label>
                         Размер матрицы (n):
