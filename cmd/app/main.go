@@ -2,9 +2,27 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"path/filepath"
 
 	"github.com/nerfthisdev/cm-lab-1/internal/linearal"
 )
+
+func serveStaticFiles() http.Handler {
+	publicDir := http.Dir("public") // Path to your static files
+	fileServer := http.FileServer(publicDir)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := filepath.Clean(r.URL.Path)
+		if path == "/" {
+			http.ServeFile(w, r, filepath.Join("public", "index.html"))
+			return
+		}
+
+		// Serve the requested file
+		fileServer.ServeHTTP(w, r)
+	})
+}
 
 func main() {
 
