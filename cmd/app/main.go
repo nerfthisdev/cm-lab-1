@@ -1,72 +1,24 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
-	"path/filepath"
+	"os"
 
-	"github.com/nerfthisdev/cm-lab-1/internal/linearal"
+	"github.com/joho/godotenv"
 )
 
-func serveStaticFiles() http.Handler {
-	publicDir := http.Dir("public") // Path to your static files
-	fileServer := http.FileServer(publicDir)
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := filepath.Clean(r.URL.Path)
-		if path == "/" {
-			http.ServeFile(w, r, filepath.Join("public", "index.html"))
-			return
-		}
-
-		// Serve the requested file
-		fileServer.ServeHTTP(w, r)
-	})
-}
-
 func main() {
-
-	A := [][]float64{
-		{4, 1},
-		{1, 3},
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
 	}
+	staticPath := os.Getenv("STATIC_PATH")
 
-	b := []float64{3, 2}
+	fs := http.FileServer(http.Dir(staticPath))
+	http.Handle("/", fs)
 
-	var success bool
-	var flag bool
-	var alreadyHas bool
-
-	A, b, success, flag, alreadyHas = linearal.RearrangeMatrix(A, b)
-
-	linearal.CheckVerbose(A)
-
-	fmt.Println(A[1])
-	fmt.Println(b[1])
-
-	if !success {
-		fmt.Println("Не удалось достичь диагонального преобладания!")
-		return
-	} else {
-		fmt.Printf("Удалось достичь диагонального преобладания, строгое выполнение неравенства: %t, УЖЕ БЫЛА: %t \n", flag, alreadyHas)
-
-	}
-
-	D, L_plus_U := linearal.TransformMatrix(A)
-
-	fmt.Println(L_plus_U)
-
-	C, d := linearal.CalcC(D, L_plus_U, b)
-	norm := linearal.MatrixInfNorm(C)
-	fmt.Printf("∞-норма матрицы B: %.4f\n", norm)
-
-	x0 := make([]float64, len(A))
-
-	tol := 1e-6
-
-	solution, iterations, errors := linearal.SimpleIteration(C, d, x0, tol, 1000)
-
-	fmt.Println("Решение:", solution)
-	fmt.Println("Количество итераций:", iterations)
-	fmt.Println("Вектор погрешностей:", errors[:10], "...")
+	port := ":5176"
+	log.Printf("Starting server on %s\n", port)
+	log.Fatal(http.ListenAndServe(port, nil))
 }
