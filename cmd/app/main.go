@@ -64,21 +64,15 @@ func handleReq(w http.ResponseWriter, r *http.Request) {
 
 	solution, iterations, errors := linearal.SimpleIteration(C, d, make([]float64, len(A)), tol, 1000)
 
+	log.Println("Norm less than 1 proceed with solution")
 	response := map[string]interface{}{
-		"error": "couldnt rearrange and norm less than 1",
-	}
-
-	if norm < 1 {
-		log.Println("Norm less than 1 proceed with solution")
-		response = map[string]interface{}{
-			"success":    success,
-			"flag":       flag,
-			"alreadyHas": alreadyHas,
-			"norm":       norm,
-			"solution":   solution,
-			"iterations": iterations,
-			"errors":     errors,
-		}
+		"success":    success,
+		"flag":       flag,
+		"alreadyHas": alreadyHas,
+		"norm":       norm,
+		"solution":   solution,
+		"iterations": iterations,
+		"errors":     errors,
 	}
 
 	log.Println(solution)
@@ -89,6 +83,7 @@ func handleReq(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	staticPath := os.Getenv("STATIC_PATH")
+	log.Println(staticPath)
 
 	fs := http.FileServer(http.Dir(staticPath))
 

@@ -233,6 +233,7 @@ export const MatrixSolver = () => {
 
             const data = response.data;
             let formattedResponse: string;
+            let numberArray = data.errors.map(Number);
 
             if (data.error) {
                 formattedResponse =
@@ -245,7 +246,8 @@ export const MatrixSolver = () => {
 Норма матрицы C: ${data.norm.toFixed(4)}
 Вектор решений: [${data.solution.join(", ")}]
 Количество итераций: ${data.iterations}
-Вектор ошибок: [${data.errors.slice(0, 10).join(", ")}...]
+Вектор ошибок (последние 5): [${data.errors.slice(-5).join(", ")}]
+Вектор ошибок max: ${Math.max(...numberArray)} min: ${Math.min(...numberArray)}
 Время работы: ${elapsedTime} мс
 `;
             }
