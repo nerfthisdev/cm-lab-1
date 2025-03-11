@@ -52,13 +52,13 @@ func RearrangeMatrix(mat [][]float64, b []float64) ([][]float64, []float64, bool
 func CheckVerbose(mat [][]float64) {
 	n := len(mat)
 	var rowMax float64
-	for i := 0; i < n; i++ {
+	for i := range n {
 
 		rowSum := 0.0
 		rowMax = math.Inf(-1)
 		indexMax := 0
 
-		for j := 0; j < n; j++ {
+		for j := range n {
 			x := math.Abs(mat[i][j])
 			rowSum += x
 			if x > rowMax {
