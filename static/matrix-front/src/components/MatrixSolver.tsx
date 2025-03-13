@@ -2,8 +2,10 @@ import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { RearrangedMatrix } from "./RearrangedMatrinx";
 
 export const MatrixSolver = () => {
+    const [board, setBoard] = useState<number[][] | null>(null);
     const MAX_N_VALUE = 20;
 
     const [n, setN] = useState<number | null>(null);
@@ -234,6 +236,12 @@ export const MatrixSolver = () => {
             const data = response.data;
             let formattedResponse: string;
             let numberArray = data.errors.map(Number);
+            setBoard(data.arearranged);
+
+            if (!data.errors) {
+                formattedResponse =
+                    "Не удалось достичь диагонального преобладания и норма больше 1";
+            }
 
             if (data.error) {
                 formattedResponse =
@@ -435,6 +443,7 @@ export const MatrixSolver = () => {
                     {loading ? "Загрузка..." : "Решить"}
                 </button>
             </div>
+            <RearrangedMatrix board={board}></RearrangedMatrix>
             {serverResponseText && (
                 <pre
                     style={{

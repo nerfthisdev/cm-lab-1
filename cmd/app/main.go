@@ -62,17 +62,26 @@ func handleReq(w http.ResponseWriter, r *http.Request) {
 	C, d := linearal.CalcC(D, L_plus_U, b)
 	norm := linearal.MatrixInfNorm(C)
 
+	if !success && norm >= 1 {
+		response := map[string]interface{}{
+			"error": !success,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	}
+
 	solution, iterations, errors := linearal.SimpleIteration(C, d, make([]float64, len(A)), tol, 1000)
 
 	log.Println("Norm less than 1 proceed with solution")
 	response := map[string]interface{}{
-		"success":    success,
-		"flag":       flag,
-		"alreadyHas": alreadyHas,
-		"norm":       norm,
-		"solution":   solution,
-		"iterations": iterations,
-		"errors":     errors,
+		"success":     success,
+		"flag":        flag,
+		"alreadyHas":  alreadyHas,
+		"norm":        norm,
+		"solution":    solution,
+		"iterations":  iterations,
+		"arearranged": ARearranged,
+		"errors":      errors,
 	}
 
 	log.Println(solution)
